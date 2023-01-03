@@ -1,0 +1,26 @@
+The cat command in Linux is used to concatenate files and print to a standard output.
+
+The type command is a Windows cat equivalent that works across a command-line prompt (CMD) and a Windows PowerShell.
+
+In this short note i will show how to concatenate files and how to print the contents of a text file to the screen in Windows.
+
+Cool Tip: Windows grep command equivalent in CMD and PowerShell! Read more →
+`Cat` in CMD & PowerShell
+
+Print the contents of a text file in CMD or Windows PowerShell (cat a file):
+
+C:\> type file.txt
+
+Create files:
+
+C:\> echo "line from file1" > file1.txt
+C:\> echo "line from file2" > file2.txt
+
+Concatenate files:
+
+C:\> type file1.txt file2.txt > result.txt
+C:\> type result.txt
+line from file1
+line from file2
+
+Type: The type command in PowerShell is the alias of the Get-Content command.

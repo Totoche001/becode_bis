@@ -1,0 +1,30 @@
+I. Récupérer la date de création d'un fichier avec stat
+
+Sous Linux, la commande "stat" fait partie du package "Coreutils" et elle permet d'obtenir des informations sur un dossier ou un fichier. Parmi les informations que l'on peut récupérer, il y a le chemin complet, la taille, les droits, mais aussi plusieurs dates (date du dernier accès, date de la dernière modification et la date de création).
+
+Commençons par créer un fichier vide avec la commande touch :
+
+`touch /home/flo/itconnect.txt`
+
+Ensuite, on va simplement exécuter la commande "stat" en précisant le chemin vers notre fichier :
+
+`stat /home/flo/itconnect.txt`
+
+
+
+
+On peut voir que la dernière ligne s'intitule "Créé" et elle contient la date et l'heure de création du fichier, de façon très précise ! Sur une version anglaise, la ligne "Créé" sera remplacée par "Birth". Vu qu'il y a aussi la date de dernière modification, vous pouvez savoir si un fichier a été modifié depuis sa création.
+
+Maintenant, si vous souhaitez obtenir uniquement la date de création du fichier sans toutes les autres informations, il va falloir affiner la commande stat.
+
+En regardant l'aide de cette commande (stat --help), on peut voir qu'elle dispose d'un paramètre nommé "-c" et qui permet d'ajuster le format de sortie, ce qui est s'annonce intéressant par rapport à ce que l'on cherche à faire. Toujours dans l'aide, on peut également lire ceci :
+
+%w date de création du fichier, lisible ; - si inconnue
+
+Il ne reste plus qu'à utiliser "%w" pour notre format de sortie, ce qui donne la commande suivante :
+
+stat -c '%w' /home/flo/itconnect.txt
+
+Cette fois-ci, j'obtiens uniquement l'information souhaitée :
+
+2021-11-04 08:59:36.802289548 +0100

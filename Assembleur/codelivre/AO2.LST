@@ -1,0 +1,232 @@
+Microsoft (R) Macro Assembler  Version 4.00                 9/18/87 15:25:22
+
+                                                            Page     1-1
+                                                            
+
+                                ; Orgue ASCII II (Version 2: countourne le DOS)
+				 
+                                 
+ = 0042                         timer   equ     42h 
+ = 0061                         speaker equ     61h 
+ = 004F                         sponmsk equ     4fh 
+ = 004C                         spofmsk equ     4ch 
+ = 00B6                         settim  equ     0b6h 
+ = 0001                         termkey equ     1 
+ = 0060                         keyport equ     60h 
+                                 
+                                doscall macro   x 
+                                        mov     ah,x 
+                                        int     21h 
+                                        endm 
+                                 
+                                pout    macro   x,y 
+                                        mov     al,y 
+                                        out     x,al 
+                                        endm 
+                                 
+ 0000                           code    segment 
+ 0100                                   org     100h 
+                                        assume  cs:code 
+                                 
+ 0100  EB 32 90                 start:  jmp     begin           ; counrourne va
+				riable de stockage 
+                                 
+                                ;---- Variable de Stockage ---- 
+                                 
+ 0103  41 74 74 65 6E 74 69     msg     db      'Attention ca va barder - <ESC>
+				 pour Quitter!$' 
+       6F 6E 20 63 61 20 76     
+       61 20 62 61 72 64 65     
+       72 20 2D 20 3C 45 53     
+       43 3E 20 70 6F 75 72     
+       20 51 75 69 74 74 65     
+       72 21 24                 
+                                 
+ 0130  00 00 00 00              oldvect dd      0               ; definir doubl
+				e mot (4 octets) de 
+                                                                ; stockage... 
+                                ; Start of Program 
+                                 
+ 0134  BA 0103 R                begin:  mov     dx,offset msg 
+                                        doscall 9 
+ 0137  B4 09                  1         mov     ah,9
+ 0139  CD 21                  1         int     21h
+ 013B  2B C0                            sub     ax,ax           ; ‚stablir addr
+				essage zone 
+ 013D  8E D8                            mov     ds,ax           ; vecteur d'int
+				erruption 
+ 013F  BE 0024                          mov     si,9*4          ; idem … mov  s
+				i,36 
+Microsoft (R) Macro Assembler  Version 4.00                 9/18/87 15:25:22
+
+                                                            Page     1-2
+                                                            
+
+ 0142  B9 0004                          mov     cx,4            ; 2.0 fait un C
+				ALL ici 
+ 0145  BF 0130 R                        mov     di,offset oldvect 
+ 0148  FC                               cld                     ; et par pruden
+				ce 
+ 0149  F3/ A4                           rep     movsb 
+ 014B  0E                               push    cs              ; faire DS = CS
+				 
+ 014C  1F                               pop     ds 
+ 014D  BA 015B R                        mov     dx,offset kbdintarget 
+ 0150  B0 09                            mov     al,9             ; faire que l'
+				interruption 9 pointe 
+                                        doscall 25h              ; sur l'‚tique
+				tte kbdintarget 
+ 0152  B4 25                  1         mov     ah,25h
+ 0154  CD 21                  1         int     21h
+ 0156  BA 01A6 R                        mov     dx,offset lastin + 5 
+ 0159  CD 27                            int     27h             ; fin, rendre r
+				‚sident 
+                                 
+                                ; Ceci sera ex‚cuter … chaque frappe d'une touc
+				he quelconque! 
+                                 
+ 015B                           kbdintarget: 
+ 015B  FB                               sti                     ; interruption 
+				du rythmeur 
+ 015C  50                               push    ax              ; sauvegarde d'
+				AX 
+ 015D  E4 60                            in      al,keyport      ; lire frappe c
+				lavier 
+ 015F  3C 80                            cmp     al,80h          ; combination B
+				REAK ? 
+ 0161  73 3D                            jnb     exit            ; si oui, saut.
+				.. 
+ 0163  3C 01                            cmp     al,termkey      ; touche fin du
+				 programme ? 
+ 0165  74 1D                            je      lastime         ; si oui, saut.
+				.. 
+ 0167  50                               push    ax              ; sauvegarde va
+				leur touche frapp‚e 
+                                        pout    timer+1,settim 
+ 0168  B0 B6                  1         mov     al,settim
+ 016A  E6 43                  1         out     timer+1,al
+ 016C  2A C0                            sub     al,al           ; z‚ro en AL 
+ 016E  E6 42                            out     timer,al        ; envoyer divis
+				eur, LSB d'abord 
+ 0170  58                               pop     ax              ; MSB du divise
+				ur = valeur frappe 
+ 0171  E6 42                            out     timer,al        ; rythmeur joue
+				 la musique 
+                                        pout    speaker,sponmsk 
+ 0173  B0 4F                  1         mov     al,sponmsk
+ 0175  E6 61                  1         out     speaker,al
+                                 
+Microsoft (R) Macro Assembler  Version 4.00                 9/18/87 15:25:22
+
+                                                            Page     1-3
+                                                            
+
+ 0177  B8 2000                          mov     ax,2000h        ; boucle d'atte
+				nte 
+ 017A  48                       repeat: dec     ax 
+ 017B  75 FD                            jne     repeat 
+                                 
+                                        pout    speaker,spofmsk 
+ 017D  B0 4C                  1         mov     al,spofmsk
+ 017F  E6 61                  1         out     speaker,al
+ 0181  EB 1D 90                         jmp     exit 
+                                 
+ 0184                           lastime:                        ; reprendre vec
+				teur clavier 
+ 0184  1E                               push    ds              ; sauvegarde da
+				ns la pile 
+ 0185  06                               push    es              ; de tous les r
+				egistres 
+ 0186  56                               push    si              ; utilis‚s par 
+				cette routine 
+ 0187  57                               push    di 
+ 0188  51                               push    cx 
+ 0189  0E                               push    cs 
+ 018A  1F                               pop     ds              ; faire DS = CS
+				 
+ 018B  2B C0                            sub     ax,ax           ; ‚stablir adre
+				ssage zone 
+ 018D  8E C0                            mov     es,ax           ; vecteur d'int
+				erruption 
+ 018F  BF 0024                          mov     di,9*4          ; Cette fois, d
+				‚placer stockage du prog 
+ 0192  BE 0130 R                        mov     si,offset oldvect ; dans zone d
+				u vecteur d'interruption. 
+ 0195  B9 0004                          mov     cx,4 
+ 0198  FC                               cld                     ; ne rien pr‚su
+				m‚ au sujet du pointeur D 
+ 0199  F3/ A4                           rep     movsb           ; retour ancien
+				 vecteur d'int. de clavier 
+ 019B  59                               pop     cx 
+ 019C  5F                               pop     di              ; restaurer reg
+				istres 
+ 019D  5E                               pop     si              ; en ordre cont
+				raire du push... 
+ 019E  07                               pop     es              ; restaurer les
+				 registres 
+ 019F  1F                               pop     ds              ; en ordre cont
+				raire du push... 
+                                 
+ 01A0  58                       exit:   pop     ax 
+ 01A1  2E: FF 2E 0130 R         lastin: jmp     [oldvect]       ; saut … ancien
+				ne rout. int. de clavier 
+                                 
+ 01A6                           code    ends 
+                                        end     start 
+
+Microsoft (R) Macro Assembler  Version 4.00                 9/18/87 15:25:22
+
+                                                            Symbols-1
+                                                             
+
+Macros:
+
+		N a m e			Lines
+
+DOSCALL  . . . . . . . . . . . .  	   2
+POUT . . . . . . . . . . . . . .  	   2
+
+Segments and Groups:
+
+                N a m e         	Size	Align	Combine Class
+
+CODE . . . . . . . . . . . . . .  	01A6	PARA	NONE	
+
+Symbols:            
+
+                N a m e         	Type	Value	Attr         
+
+BEGIN  . . . . . . . . . . . . .  	L NEAR	0134	CODE
+
+EXIT . . . . . . . . . . . . . .  	L NEAR	01A0	CODE
+
+KBDINTARGET  . . . . . . . . . .  	L NEAR	015B	CODE
+KEYPORT  . . . . . . . . . . . .  	Number	0060	
+
+LASTIME  . . . . . . . . . . . .  	L NEAR	0184	CODE
+LASTIN . . . . . . . . . . . . .  	L NEAR	01A1	CODE
+
+MSG  . . . . . . . . . . . . . .  	L BYTE 	0103	CODE
+
+OLDVECT  . . . . . . . . . . . .  	L DWORD	0130	CODE
+
+REPEAT . . . . . . . . . . . . .  	L NEAR	017A	CODE
+
+SETTIM . . . . . . . . . . . . .  	Number	00B6	
+SPEAKER  . . . . . . . . . . . .  	Number	0061	
+SPOFMSK  . . . . . . . . . . . .  	Number	004C	
+SPONMSK  . . . . . . . . . . . .  	Number	004F	
+START  . . . . . . . . . . . . .  	L NEAR	0100	CODE
+
+TERMKEY  . . . . . . . . . . . .  	Number	0001	
+TIMER  . . . . . . . . . . . . .  	Number	0042	
+
+
+    102 Source  Lines
+    112 Total   Lines
+     40 Symbols
+
+  49438 Bytes symbol space free
+
+      0 Warning Errors
+      0 Severe  Errors

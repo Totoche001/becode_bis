@@ -1,0 +1,232 @@
+Microsoft (R) Macro Assembler  Version 4.00                 9/18/87 15:19:00
+
+                                                            Page     1-1
+                                                            
+
+                                ; Orgue ASCII III 
+                                 
+ = 0042                         timer   equ     42h 
+ = 0061                         speaker equ     61h 
+ = 004F                         sponmsk equ     4fh 
+ = 004C                         spofmsk equ     4ch 
+ = 00B6                         settim  equ     0b6h 
+ = 0060                         keyport equ     60h 
+                                 
+                                doscall macro   x 
+                                        mov     ah,x 
+                                        int     21h 
+                                        endm 
+                                 
+                                pout    macro   x,y 
+                                        mov     al,y 
+                                        out     x,al 
+                                        endm 
+                                 
+ 0000                           code    segment 
+ 0100                                   org     100h 
+                                        assume  cs:code,ds:code 
+                                 
+ 0100  EB 75 90                 start:  jmp     begin           ; contourner va
+				riable de stockage 
+                                 
+                                ;----- Donn‚es musique ----- 
+                                 
+ 0103  11 04 10 04 0F 04 10     song    db      17,4,16,4,15,4,16,4,17,4,17,4,1
+				7,8 
+       04 11 04 11 04 11 08     
+ 0111  10 04 10 04 10 08 11             db      16,4,16,4,16,8,17,4,19,4,19,8 
+       04 13 04 13 08           
+ 011D  11 04 10 04 0F 04 10             db      17,4,16,4,15,4,16,4,17,4,17,4,1
+				7,4 
+       04 11 04 11 04 11 04     
+ 012B  11 04 10 04 10 04 11             db      17,4,16,4,16,4,17,4,16,4,15,4 
+       04 10 04 0F 04           
+                                 
+                                ;----- Donn‚es diviseur rythmeur (Pitch) ------
+				 
+                                 
+                                ;               C-1  D-2  E-3  F-4  G-5  A-6  B
+				-7  C-8  D-9  E-10 F-11 
+ 0137  0000 23A1 1FBE 1C47      divsors dw 0000,9121,8126,7239,6833,6088,5423,4
+				832,4560,4063,3620,3417 
+       1AB1 17C8 152F 12E0      
+       11D0 0FDF 0E24 0D59      
+                                ;               G-12 A-13 B-14 C-15 D-16 E-17 F
+				-18 G-19 A-20 B-21 C-22 
+ 014F  0BE4 0A98 0970 08E8              dw      3044,2712,2416,2280,2031,1810,1
+				708,1522,1356,1208,1140 
+       07EF 0712 06AC 05F2      
+       054C 04B8 0474           
+Microsoft (R) Macro Assembler  Version 4.00                 9/18/87 15:19:00
+
+                                                            Page     1-2
+                                                            
+
+                                ;               D-23 E-24 F-25 G-26 A-27 B-28 
+ 0165  03F8 0389 0356 02F9              dw      1016, 905, 854, 761, 678, 604 
+       02A6 025C                
+                                 
+                                ;----- Variables ------ 
+                                 
+ 0171  0000                     notecnt dw      0                              
+				 ; notes jou‚s jusqu'ici 
+ 0173  0000                     beatcnt dw      0                              
+				 ; battements, cette note 
+ 0175  0000                     tbtn    dw      0                              
+				 ; totale battements, 
+                                 
+                                ;----- Initialisation du Programme ------ 
+                                 
+ 0177  A0 0104 R                begin:  mov     al, [song+1]                   
+				 ; dur‚e de la premiŠre note 
+ 017A  98                               cbw 
+ 017B  A3 0175 R                        mov     tbtn,ax 
+ 017E  E8 01CA R                        call    playnot                        
+				 ; commencer premiŠre note 
+ 0181  BA 018F R                        mov     dx,offset target1c 
+ 0184  B0 1C                            mov     al,1ch                         
+				 ; accroche interr rythmeur 
+                                        doscall 25h 
+ 0186  B4 25                  1         mov     ah,25h
+ 0188  CD 21                  1         int     21h
+ 018A  BA 01F5 R                        mov     dx,offset lbyte+1 
+ 018D  CD 27                            int     27h                            
+				 ; FIN, rendre r‚sident 
+                                 
+                                ;----- Cible pour l'interruption 1Ch ------ 
+                                 
+ 018F                           target1c: 
+ 018F  0E                               push    cs                      ; rendr
+				e temps d'ex‚cution synchro 
+ 0190  1F                               pop     ds                      ; avec 
+				temps pr‚sumer en assemblage 
+ 0191  FF 06 0173 R                     inc     beatcnt                 ; 
+ 0195  A1 0175 R                        mov     ax,tbtn                 ; 
+ 0198  3B 06 0173 R                     cmp     ax,beatcnt              ; fin d
+				e la note ? 
+ 019C  74 01                            je      in2                     ; oui, 
+				saut note suivante 
+ 019E  CF                               iret                            ; non..
+				. 
+ 019F  83 3E 0171 R 1A          in2:    cmp     notecnt,(offset divsors - offse
+				t song) / 2 
+ 01A4  75 06                            jne     in3                  ; si pas ‚
+				gal, pas fini 
+ 01A6  C6 06 018F R CF                  mov     byte ptr target1c,0cfh 
+ 01AB  CF                               iret 
+                                 
+                                ; Jouer note suivante 
+Microsoft (R) Macro Assembler  Version 4.00                 9/18/87 15:19:00
+
+                                                            Page     1-3
+                                                            
+
+                                 
+ 01AC  56                       in3:    push    si                      ;sauveg
+				 unique de ds,dx,ax 
+ 01AD  FF 06 0171 R                     inc     notecnt                 ;avance
+				r … note suivante 
+ 01B1  C7 06 0173 R 0000                mov     beatcnt,0               ;relanc
+				er compteur battements 
+ 01B7  8B 36 0171 R                     mov     si,notecnt 
+ 01BB  D1 E6                            shl     si,1                    ;2 ‚l‚m
+				ents pour chaque note 
+ 01BD  8A 84 0104 R                     mov     al,[si+offset song+1]   ;dur‚e 
+				de cette note 
+ 01C1  98                               cbw 
+ 01C2  A3 0175 R                        mov     tbtn,ax 
+ 01C5  E8 01CA R                        call    playnot 
+ 01C8  5E                               pop     si 
+ 01C9  CF                               iret 
+                                 
+ 01CA  8B 36 0171 R             playnot: mov     si,notecnt 
+ 01CE  D1 E6                            shl     si,1 
+ 01D0  8A 84 0103 R                     mov     al,[si+offset song]     ;AL = m
+				aintenant un num‚ro de note 
+ 01D4  0A C0                            or      al,al                   ;forcer
+				 les pointeurs 
+ 01D6  75 05                            jnz     pn1                     ;note 0
+				 est une pause (fermer haut-parl) 
+                                        pout    speaker,spofmsk 
+ 01D8  B0 4C                  1         mov     al,spofmsk
+ 01DA  E6 61                  1         out     speaker,al
+ 01DC  C3                               ret 
+ 01DD  98                       pn1:    cbw                             ; AH da
+				ns une octet (1 enregistrement) 
+ 01DE  8B F0                            mov     si,ax 
+ 01E0  D1 E6                            shl     si,1                    ;table 
+				de diviseur 
+                                        pout    timer+1,settim 
+ 01E2  B0 B6                  1         mov     al,settim
+ 01E4  E6 43                  1         out     timer+1,al
+ 01E6  8B 84 0137 R                     mov     ax,[si+offset divsors] 
+ 01EA  E6 42                            out     timer,al 
+ 01EC  8A C4                            mov     al,ah 
+ 01EE  E6 42                            out     timer,al 
+                                        pout    speaker,sponmsk 
+ 01F0  B0 4F                  1         mov     al,sponmsk
+ 01F2  E6 61                  1         out     speaker,al
+ 01F4  C3                       lbyte:  ret 
+                                 
+ 01F5                           code    ends 
+                                        end     start 
+
+Microsoft (R) Macro Assembler  Version 4.00                 9/18/87 15:19:00
+
+                                                            Symbols-1
+                                                             
+
+Macros:
+
+		N a m e			Lines
+
+DOSCALL  . . . . . . . . . . . .  	   2
+POUT . . . . . . . . . . . . . .  	   2
+
+Segments and Groups:
+
+                N a m e         	Size	Align	Combine Class
+
+CODE . . . . . . . . . . . . . .  	01F5	PARA	NONE	
+
+Symbols:            
+
+                N a m e         	Type	Value	Attr         
+
+BEATCNT  . . . . . . . . . . . .  	L WORD 	0173	CODE
+BEGIN  . . . . . . . . . . . . .  	L NEAR	0177	CODE
+
+DIVSORS  . . . . . . . . . . . .  	L WORD 	0137	CODE
+
+IN2  . . . . . . . . . . . . . .  	L NEAR	019F	CODE
+IN3  . . . . . . . . . . . . . .  	L NEAR	01AC	CODE
+
+KEYPORT  . . . . . . . . . . . .  	Number	0060	
+
+LBYTE  . . . . . . . . . . . . .  	L NEAR	01F4	CODE
+
+NOTECNT  . . . . . . . . . . . .  	L WORD 	0171	CODE
+
+PLAYNOT  . . . . . . . . . . . .  	L NEAR	01CA	CODE
+PN1  . . . . . . . . . . . . . .  	L NEAR	01DD	CODE
+
+SETTIM . . . . . . . . . . . . .  	Number	00B6	
+SONG . . . . . . . . . . . . . .  	L BYTE 	0103	CODE
+SPEAKER  . . . . . . . . . . . .  	Number	0061	
+SPOFMSK  . . . . . . . . . . . .  	Number	004C	
+SPONMSK  . . . . . . . . . . . .  	Number	004F	
+START  . . . . . . . . . . . . .  	L NEAR	0100	CODE
+
+TARGET1C . . . . . . . . . . . .  	L NEAR	018F	CODE
+TBTN . . . . . . . . . . . . . .  	L WORD 	0175	CODE
+TIMER  . . . . . . . . . . . . .  	Number	0042	
+
+
+    108 Source  Lines
+    116 Total   Lines
+     43 Symbols
+
+  49342 Bytes symbol space free
+
+      0 Warning Errors
+      0 Severe  Errors

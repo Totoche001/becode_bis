@@ -1,0 +1,103 @@
+Microsoft (R) Macro Assembler  Version 4.00                 9/18/87 15:02:14
+
+                                                            Page     1-1
+                                                            
+
+                                ; Orgue ASCII 
+                                 
+ 0000                                   code    segment 
+ 0100                                   org     100h 
+                                        assume  cs:code 
+                                 
+ = 0042                         timer   equ     42h 
+ = 0061                         speaker equ     61h 
+                                 
+ 0100  E8 010E R                start:  call    getkey          ; retour avec f
+				rappe en AL 
+ 0103  3C 1B                            cmp     al,1bh          ; escape? 
+ 0105  75 02                            jne     skip 
+ 0107  CD 20                            int     20h 
+ 0109  E8 0113 R                skip:   call    beep            ; sinon, beep s
+				elon valeur 
+ 010C  EB F2                            jmp     start           ; dans AL, et r
+				etour 
+                                 
+ 010E  B4 07                    getkey: mov     ah,7            ; faire DOS fon
+				ction 7 
+ 0110  CD 21                            int     21h             ; (retour avec 
+				frappe en AL 
+ 0112  C3                               ret 
+                                 
+ 0113  8A D8                    beep:   mov     bl,al           ; sauvgarde de 
+				la frappe 
+ 0115  B0 B6                            mov     al,0b6h         ; preparer ryth
+				meur pour 
+ 0117  E6 43                            out     timer+1,al      ; acceptation n
+				ouv. division 
+ 0119  B0 00                            mov     al,0            ; envoyer 0 com
+				me LSB 
+ 011B  E6 42                            out     timer,al        ; du nouveau di
+				viseur 
+ 011D  8A C3                            mov     al,bl           ; et valeur fra
+				ppe 
+ 011F  E6 42                            out     timer,al        ; comme MSB 
+ 0121  B0 4F                            mov     al,4fh          ; d‚marrer son 
+				en reliant 
+ 0123  E6 61                            out     speaker,al      ; le haut-parle
+				ur au rythmeur 
+ 0125  B9 FFFF                          mov     cx,0ffffh       ; pause 
+ 0128  F3/ AD                           rep     lodsw           ; pendant que l
+				a note est jou‚e 
+ 012A  B0 4D                            mov     al,4dh          ; arreter en co
+				upant la 
+ 012C  E6 61                            out     speaker,al      ; connection ha
+				ut-parleur/rythmeur 
+ 012E  B4 02                            mov     ah,2            ; utileser la f
+				onction DOS sortie 
+ 0130  B2 0E                            mov     dl,0eh          ; caractŠre (OU
+				T) pour envoyer 
+ 0132  CD 21                            int     21h             ; symbole de la
+Microsoft (R) Macro Assembler  Version 4.00                 9/18/87 15:02:14
+
+                                                            Page     1-2
+                                                            
+
+				 note … l'‚cran 
+ 0134  C3                               ret 
+                                 
+ 0135                           code    ends 
+                                        end     start 
+Microsoft (R) Macro Assembler  Version 4.00                 9/18/87 15:02:14
+
+                                                            Symbols-1
+                                                             
+
+Segments and Groups:
+
+                N a m e         	Size	Align	Combine Class
+
+CODE . . . . . . . . . . . . . .  	0135	PARA	NONE	
+
+Symbols:            
+
+                N a m e         	Type	Value	Attr         
+
+BEEP . . . . . . . . . . . . . .  	L NEAR	0113	CODE
+
+GETKEY . . . . . . . . . . . . .  	L NEAR	010E	CODE
+
+SKIP . . . . . . . . . . . . . .  	L NEAR	0109	CODE
+SPEAKER  . . . . . . . . . . . .  	Number	0061	
+START  . . . . . . . . . . . . .  	L NEAR	0100	CODE
+
+TIMER  . . . . . . . . . . . . .  	Number	0042	
+
+
+     40 Source  Lines
+     40 Total   Lines
+     28 Symbols
+
+  50440 Bytes symbol space free
+
+      0 Warning Errors
+      0 Severe  Errors

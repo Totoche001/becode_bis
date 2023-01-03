@@ -1,2 +1,3 @@
 # becode_bis
-for Cetic
+Résumé des projets faits à Becode
+

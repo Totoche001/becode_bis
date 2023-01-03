@@ -1,0 +1,1 @@
+Note: If you get an error saying Unable to negotiate with <IP> port 22: no matching how to key type found. Their offer: ssh-rsa, ssh-dss this is because OpenSSH have deprecated ssh-rsa. Add `-oHostKeyAlgorithms=+ssh-rsa` to your command to connect.

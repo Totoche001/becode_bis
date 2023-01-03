@@ -1,0 +1,1 @@
+https://www.geeksforgeeks.org/fdisk-command-in-linux-with-examples/
