@@ -4,7 +4,7 @@ import requests
 import re
 
 # your shodan API key
-SHODAN_API_KEY = '<CuWS3DmezjF4HmU5WlDTFQNw4cBlIYhC>'
+SHODAN_API_KEY = '<>'
 api = shodan.Shodan(SHODAN_API_KEY)
 
 # requests a page of data from shodan
